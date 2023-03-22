@@ -23,12 +23,11 @@ const { Pool } = require("pg");
 // });
 
 const pool = new Pool({
-  user: "romain",
-  host: "dpg-cg99snkeooghng70jk0g-a",
+  username: "romain",
+  hostname: "dpg-cg99snkeooghng70jk0g-a",
   database: "groupomania_99fi",
   password: "cPt841EAgk3aZCSDSeOcIFn4H6Hx3Nug",
   port: 5432,
-  ssl: true,
 });
 
 pool.connect((err, client, release) => {
