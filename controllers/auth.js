@@ -5,7 +5,6 @@ const dbc = require("../config/db");
 exports.signup = async (req, res) => {
   try {
     const { user_password: password } = req.body;
-
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(password, salt);
 
@@ -13,9 +12,18 @@ exports.signup = async (req, res) => {
       ...req.body,
       user_password: encryptedPassword,
     };
-    const sql = "INSERT INTO users SET ?";
+
+    const sql =
+      "INSERT INTO users (user_firstname, user_lastname, user_email, user_password) VALUES ($1, $2, $3, $4)";
+    const values = [
+      user.user_firstname,
+      user.user_lastname,
+      user.user_email,
+      user.user_password,
+    ];
+
     const db = dbc.getDB();
-    db.query(sql, user, (err, result) => {
+    db.query(sql, values, (err, result) => {
       if (!result) {
         res.status(200).json({ message: "Email déjà enregistré", err });
       } else {
@@ -30,16 +38,16 @@ exports.signup = async (req, res) => {
 exports.login = (req, res) => {
   //vérification si le user existe
   const { user_email, user_password: clearPassword } = req.body;
-  const sql = `SELECT user_firstname, user_lastname, user_password, user_id, user_active, user_email, user_bio FROM users WHERE user_email=?`;
+  const sql = `SELECT user_firstname, user_lastname, user_password, user_id, user_active, user_email, user_bio FROM users WHERE user_email=$1`;
   const db = dbc.getDB();
   db.query(sql, [user_email], async (err, results) => {
     if (err) {
       return res.status(404).json({ err });
     }
     // Vérification du hash de password dans la DB
-    if (results[0] && results[0].user_active === 1) {
+    if (results.rows[0] && results.rows[0].user_active === 1) {
       try {
-        const { user_password: hashedPassword, user_id } = results[0];
+        const { user_password: hashedPassword, user_id } = results.rows[0];
         const match = await bcrypt.compare(clearPassword, hashedPassword);
         if (match) {
           // Si ça correspond on génère le jsonwebtoken
@@ -47,10 +55,10 @@ exports.login = (req, res) => {
             expiresIn: "1 days",
           });
 
-          delete results[0].user_password;
+          delete results.rows[0].user_password;
 
           res.status(200).json({
-            user: results[0],
+            user: results.rows[0],
             token: jwt.sign({ userId: user_id }, "MON_TOKEN_SECRET", {
               expiresIn: "24h",
             }),
@@ -65,12 +73,12 @@ exports.login = (req, res) => {
         console.log(err);
         return res.status(400).json({ err });
       }
-    } else if (results[0] && results[0].user_active === 0) {
+    } else if (results.rows[0] && results.rows[0].user_active === 0) {
       res.status(200).json({
         error: true,
         message: "Votre compte a été désactivé",
       });
-    } else if (!results[0]) {
+    } else if (!results.rows[0]) {
       res.status(200).json({
         error: true,
         message: "Email inconnu",

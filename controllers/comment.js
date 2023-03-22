@@ -31,15 +31,21 @@ exports.getOneComment = (req, res) => {
 
 exports.createComment = (req, res) => {
   const { body } = req;
-  const sqlComment = "INSERT INTO comments SET ?";
-  db.query(sqlComment, body, (err, result) => {
-    if (err) {
-      res.status(404).json({ err });
-      throw err;
-    } else {
-      res.status(200).json(result);
+  const { user_id, post_id, comment, date_creation } = body;
+  const sqlComment =
+    "INSERT INTO comments (user_id, post_id, comment, date_creation) VALUES ($1, $2, $3, $4) RETURNING comment_id";
+  db.query(
+    sqlComment,
+    [user_id, post_id, comment, date_creation],
+    (err, result) => {
+      if (err) {
+        res.status(404).json({ err });
+        throw err;
+      } else {
+        res.status(200).json(result);
+      }
     }
-  });
+  );
 };
 
 exports.deleteOneComment = (req, res) => {

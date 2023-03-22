@@ -35,17 +35,20 @@ exports.createPost = (req, res, next) => {
   body = {
     ...body,
   };
+  const { user_id, message, date_creation } = body;
+  const sqlInsert =
+    "INSERT INTO posts (user_id, message, date_creation) VALUES ($1, $2, $3) RETURNING post_id";
 
-  const sqlInsert = "INSERT INTO posts SET ?";
-  db.query(sqlInsert, body, (err, result) => {
+  db.query(sqlInsert, [user_id, message, date_creation], (err, result) => {
     if (err) {
       res.status(404).json({ err });
       throw err;
     }
-    const post_id = result.insertId;
+    console.log(result);
+    const post_id = result.rows[0].post_id;
     if (file) {
-      const sqlInsertImage = `INSERT INTO images (image_url, post_id) VALUES ("${file.filename}", ${post_id})`;
-      db.query(sqlInsertImage, (err, result) => {
+      const sqlInsertImage = `INSERT INTO images (image_url, post_id) VALUES ($1, $2)`;
+      db.query(sqlInsertImage, [file.filename, post_id], (err, result) => {
         if (err) {
           res.status(404).json({ err });
           throw err;
@@ -73,7 +76,9 @@ exports.deleteOnePost = (req, res, next) => {
 exports.updatePost = (req, res, next) => {
   const { id: post_id } = req.params;
   const { message: updateMessage } = req.body;
-  const sqlUpdatePost = `UPDATE posts SET posts.message = "${updateMessage}" WHERE posts.post_id = ${post_id};`;
+  console.log(req.params);
+  console.log(req.body);
+  const sqlUpdatePost = `UPDATE posts SET message = '${updateMessage}' WHERE post_id = ${post_id};`;
 
   db.query(sqlUpdatePost, (err, result) => {
     if (err) {
@@ -93,8 +98,9 @@ exports.likeUnlikePost = (req, res) => {
       res.status(404).json({ err });
       throw err;
     }
-
-    if (result.length === 0) {
+    console.log(result.rows);
+    console.log(result);
+    if (result.rowCount === 0) {
       const sqlInsert = `INSERT INTO likes (user_id, post_id) VALUES (${user_id}, ${post_id})`;
       db.query(sqlInsert, (err, result) => {
         if (err) {
@@ -150,13 +156,13 @@ exports.getPostImage = (req, res, next) => {
       res.status(404).json({ err });
       throw err;
     }
-    if (result[0]) {
-      result[0].image_url =
+    if (result.rows[0]) {
+      result.rows[0].image_url =
         req.protocol +
         "://" +
         req.get("host") +
         "/images/posts/" +
-        result[0].image_url;
+        result.rows[0].image_url;
     }
     res.status(200).json(result);
   });
