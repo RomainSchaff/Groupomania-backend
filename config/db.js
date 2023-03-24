@@ -13,6 +13,8 @@
 
 const { Pool } = require("pg");
 
+// External connection:
+
 // const pool = new Pool({
 //   user: "romain",
 //   host: "frankfurt-postgres.render.com",
@@ -20,14 +22,6 @@ const { Pool } = require("pg");
 //   password: "cPt841EAgk3aZCSDSeOcIFn4H6Hx3Nug",
 //   port: 5432,
 //   ssl: true,
-// });
-
-// const pool = new Pool({
-//   username: "romain",
-//   hostname: "dpg-cg99snkeooghng70jk0g-a",
-//   database: "groupomania_99fi",
-//   password: "cPt841EAgk3aZCSDSeOcIFn4H6Hx3Nug",
-//   port: 5432,
 // });
 
 const pool = new Pool({

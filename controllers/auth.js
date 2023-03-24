@@ -7,21 +7,19 @@ exports.signup = async (req, res) => {
     const { user_password: password } = req.body;
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(password, salt);
-
     const user = {
       ...req.body,
       user_password: encryptedPassword,
     };
-
     const sql =
-      "INSERT INTO users (user_firstname, user_lastname, user_email, user_password) VALUES ($1, $2, $3, $4)";
+      "INSERT INTO users (user_firstname, user_lastname, user_email, user_password, date) VALUES ($1, $2, $3, $4, $5) RETURNING user_id";
     const values = [
       user.user_firstname,
       user.user_lastname,
       user.user_email,
       user.user_password,
+      user.date,
     ];
-
     const db = dbc.getDB();
     db.query(sql, values, (err, result) => {
       if (!result) {
@@ -89,9 +87,10 @@ exports.login = (req, res) => {
 
 exports.desactivateAccount = (req, res) => {
   const user_id = req.params.id;
-  const sql = `UPDATE users SET user_active=0 WHERE user_id = ${user_id}`;
+  const sql = `UPDATE users SET user_active = 0 WHERE user_id = ${user_id}`;
   const db = dbc.getDB();
-  db.query(sql, user_id, (err, results) => {
+  db.query(sql, (err, results) => {
+    console.log(results);
     if (err) {
       return res.status(404).json({ err });
     }
